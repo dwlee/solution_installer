@@ -18,17 +18,14 @@ def find_solution(taget_local_path, target_solution):
 
 
 def get_src_from_gitbase(git_path, taget_local_path):
-    result = ''
     if not os.path.isdir(taget_local_path):
         print 'git clone from %s: ' % git_path
         cmd = 'git clone %s %s' % (git_path, taget_local_path)
         run_command(cmd)
     else:
-        print 'git pull from %s: ' % git_path
         os.chdir(taget_local_path)
         cmd = 'git pull --verbose'
         run_command(cmd)
-    print result
 
 
 def check_dependency(ws_path):
@@ -43,18 +40,17 @@ def build_workspace(ws_path):
 
 def launch_target_solution(ws_path, target_solution, concert_name):
     setup_bash_path = os.path.join(ws_path, 'devel', 'setup.bash')
-    #cmd = 'source %s ; rocon_launch %s %s --screen' % (setup_bash_path, target_solution, concert_name)
-    cmd = 'source %s ; rospack list' % (setup_bash_path)
-    cmd = "echo hello1\\;echo hello2"
-    print cmd
-    print shlex.split(cmd)
-    run_command(cmd, executable='/bin/bash')
-
-    print os.getenv('TEST_ENV')
+    cmd = 'source %s ; rocon_launch %s %s --screen' % (setup_bash_path, target_solution, concert_name)
+    run_command(cmd, multiple_cmd=True, executable='/bin/bash')
 
 
-def run_command(command, executable='/bin/sh'):
-    process = subprocess.Popen(shlex.split(command), executable=executable, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+def run_command(command, multiple_cmd=False, executable='/bin/sh'):
+    if multiple_cmd:
+        process = subprocess.Popen(command, shell=multiple_cmd, executable=executable, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    else:
+        process = subprocess.Popen(shlex.split(command), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+
     while True:
         output = process.stdout.readline()
         if output == '' and process.poll() is not None:
@@ -86,7 +82,6 @@ if __name__ == '__main__':
     git_path = 'https://github.com/%s.git' % (repo_name)
 
     ros_ws_path = get_ros_ws()
-    """
     # get solution from repo
     get_src_from_gitbase(git_path, taget_local_path)
     ros_ws_src_path = os.path.join(ros_ws_path, 'src')
@@ -101,13 +96,9 @@ if __name__ == '__main__':
             print 'already existed solution in workpace: [%s]' % dst
             shutil.rmtree(dst)
         shutil.copytree(src, dst)
-
     # build solution
     check_dependency(ros_ws_path)
     build_workspace(ros_ws_path)
-    """
-
     # launch target solution
     launch_target_solution(ros_ws_path, target_solution, concert_name)
-
     print 'Bye Bye'
